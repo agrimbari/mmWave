@@ -22,9 +22,9 @@ hb = 1.8;
 hr = 1.4;
 ht = 5;
 frac = (hb-hr)/(ht-hr);
-simTime =200; %sec, keep the simulation time at least 100 seconds to get results, otherwise, the code doesn't run 
+simTime =100; %sec, keep the simulation time at least 100 seconds to get results, otherwise, the code doesn't run 
 % simTime = 3*60*60; %sec Total Simulation time
-tstep = 0.1; %(sec) time step, to get a better granuality decrease the step size
+tstep = 0.05; %(sec) time step, to get a better granuality decrease the step size
 mu = 2; %Expected bloc dur =1/mu
 R = 100; %m Radius
 densityBL = 0.005; %(in bl/m^2)
@@ -49,9 +49,15 @@ s_input{indB} = struct('V_POSITION_X_INTERVAL',[-R R],...%(m)
     'SIMULATION_TIME',simTime,...%(s)
     'NB_NODES',ceil(pi*R^2*densityBL(indB))); % defines the number of blockers in a rectangle of 2r*2r 
 s_mobility{indB} = Generate_Mobility(s_input{indB});
+
+for alpha = 1:s_mobility{indB}.NB_NODES
+
+ANGLE{alpha} = atan2(s_mobility{indB}.VS_NODE(alpha).V_SPEED_Y,s_mobility{indB}.VS_NODE(alpha).V_SPEED_X);
+ s_mobility{indB}.VS_NODE(alpha).ANGLE = ANGLE{alpha};
+end 
 end
 
-disp('finished loop')
+% disp('finished loop')
 % finaldata = zeros(5,length(densityAP),length(densityBL),length(omegaVal)); % making an array of size 5*density of AP, NOT RELEVANT TO THE CAPACITY ANALYSIS  
 for indT = 1:length(densityAP) % so as to run it for various values of density of AP and density of BL 
         rhoT = densityAP(indT);% as per the notation of the paper this is lambda_t
@@ -66,7 +72,7 @@ for indT = 1:length(densityAP) % so as to run it for various values of density o
         for indO = 1:length(omegaVal)
             omega = omegaVal(indO);
             rhoB = densityBL(indB);%0.65;%Rajeev calculated central park
-            nB = ceil(pi*R^2*rhoB);%=4000; %number of blockers, since we are concerned about the density of 
+            nB = ceil(pi*R^2*rhoB)%=4000; %number of blockers, since we are concerned about the density of 
             % blockers inside the circle 
             
             AP_input = struct('WANNAPLOT',wannaplot,...
@@ -82,7 +88,7 @@ for indT = 1:length(densityAP) % so as to run it for various values of density o
                 'LOC_AP_ANGLE',alphaT,...
                 'NUM_BL',nB);
             % CHANGES MADE HERE
-            disp('Entering blockage simulation')
+%             disp('Entering blockage simulation')
               BlockageSimFn_Feb17(s_mobility{indB},AP_input);
 %             finaldata(:,indT,indB,indO) = output;
             %         output is [avgFreq,avgDur,probAllBl,th_freqBl,th_durBl,th_probAllBl];

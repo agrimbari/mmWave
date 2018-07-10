@@ -40,7 +40,7 @@ for i = 1:length(tempInd)
 alphaT(i) = alphaTorig(tempInd(i));
 B(i,1)= rT(tempInd(i));
 end
-[arranged_rT,I] = sort(B)
+[arranged_rT,I] = sort(B);
 xT = B.*cos(alphaT);%location of APs
 yT = B.*sin(alphaT);%location of APs
 xTfrac = frac*xT; %blockage zone around UE for each APs
@@ -57,14 +57,20 @@ mu = AP_input.MU; %Expected bloc dur =1/mu
 % s_mobility = Generate_Mobility(s_input);  
 
 %------------------------------------------------------
-
-dataAP = cell(nT,1);
+length_of_blockers = zeros(nB,1);
+for i=1:nB
+%     length_of_blockers(i,1)= exprnd(20,1,1);
+    length_of_blockers(i,1)= 13.6;
+end     
+dataAP = cell(nT,2,1);
 dataAP_test = cell(nT,1);%contain array of timestamps for all APs no matter which blocker
 info_vector= [];
 check =1; 
+duration = 0;
+loop=0;
 for indB = 1:nB %for every blocker
-    disp('Running for blocker:')
-    disp(indB)
+%     disp('Running for blocker:')
+%     disp(indB)
     for iter =1:(length(s_mobility.VS_NODE(indB).V_POSITION_X)-1)
         
         % for every time blocker changes direction
@@ -75,39 +81,58 @@ for indB = 1:nB %for every blocker
         start_time = s_mobility.VS_NODE(indB).V_TIME(iter);
         velocity = sqrt((s_mobility.VS_NODE(indB).V_SPEED_X(iter))^2+ ...
             (s_mobility.VS_NODE(indB).V_SPEED_Y(iter))^2);
+        
         for indT = 1:nT %for every AP
             distance_travelled = find_blockage_distance([loc0,loc1],locT(:,indT),alphaT(indT));
             timeToBl = distance_travelled/velocity; %time to blocking event
             timestampBl = start_time+timeToBl; %timestamp of blockage event
-            if(distance_travelled>=0 && timestampBl<=simTime)
+            phi(indB,iter) =  s_mobility.VS_NODE(indB).ANGLE(iter);
+          
+            theta = alphaT(indT,1);
+            angle =(theta-phi(indB,iter));
+            
+             if ((angle>(-pi/2))&&(angle<(pi/2)))
+                 
+                    duration = length_of_blockers(indB,1)*(abs(sec(angle)))*0.1;
+                    if (duration>=20)
+                        duration =20; 
+                    end 
+             else 
+                     duration = 0;
+             end 
+             if(distance_travelled>=0 && timestampBl<=simTime)
                 %                 data{indB,indT} = [data{indB,indT},start_time+blockage_time];
-               dataAP{indT} = [dataAP{indT}, timestampBl]; % to append the new timestamps of blockage arrival in every iteration for every base station
-               dataAP_test{indT} = [dataAP_test{indT},timestampBl];
-            end
+                
+                dataAP{indT,1} = [dataAP{indT,1}, timestampBl] ;% to append the new timestamps of blockage arrival in every iteration for every base station
+            
+                dataAP{indT,2} = [dataAP{indT,2},duration];
+               
+                dataAP_test{indT} = [dataAP_test{indT},timestampBl];
+                check = check+1;
+%                data,  dataAP{indT}(2,:) =  0.5*(abs(sec(r)));
+             end
         end
-        
+      
     end
-    for indT = 1:nT
-    dataAP_test{indT} = [dataAP_test{indT},indB];
-    end
+    
+%     for indT = 1:nT
+%     dataAP_test{indT} = [dataAP_test{indT},indB];
+%     end
 end
 
-disp('finished with blockers')
-length_of_blockers = zeros(nB,1);
-for i=1:nB
-    length_of_blockers(i,1)= exprnd(0.5,1,1);
-end     
-time_of_blockers = cell(nB,nT,1);
-check = 0; 
-for indB = 1:nB
-    for indT= 1:nT
-        if((find(dataAP_test{indT}==indB+1)-find(dataAP_test{indT}==indB))==1)
-        time_of_blockers{indB,indT}= 0;
-        end 
-        time_of_blockers{indB,indT}= dataAP_test{indT}((find(dataAP_test{indT}==indB))+1:(find(dataAP_test{indT}==indB+1))-1);
-    end 
-end
-check = zeros(nB,1);
+% disp('finished with blockers')
+
+% time_of_blockers = cell(nB,nT,1);
+% check = 0; 
+% for indB = 1:nB
+%     for indT= 1:nT
+%         if((find(dataAP_test{indT}==indB+1)-find(dataAP_test{indT}==indB))==1)
+%         time_of_blockers{indB,indT}= 0;
+%         end 
+%         time_of_blockers{indB,indT}= dataAP_test{indT}((find(dataAP_test{indT}==indB))+1:(find(dataAP_test{indT}==indB+1))-1);
+%     end 
+% end
+% check = zeros(nB,1);
 % for indB = 1:nB
 %     disp(indB)
 %     
@@ -122,72 +147,72 @@ check = zeros(nB,1);
 % for indB = 1:nB
 % check(indB,1)
 % end 
-loop_count=0;
-for indT = 1:nT
-    len =length(dataAP{indT});
-    r = 0 + (2*pi).*rand(1,len);
-    dataAP{indT}(2,:) =  0.5*(abs(sec(r)));
-%     dataAP{indT}(2,:) =  0.5 ;
-end
-for indB= 1:nB
-for i = 1:nT
-    if(i==nT)
-        loop_count= loop_count+1;
-        break 
-    end 
-    for j= i+1:nT
-        alpha = time_of_blockers{indB,i};
-        beta = time_of_blockers{indB,j};
-        loop_count= loop_count+1; 
-        if(alpha==0) 
-            break 
-        end 
-        if(beta==0)
-            break 
-        end 
-        tweak_parameter= 5;
-        len1= length(alpha);
-        len2 = length(beta);
-        if(len1>=len2)
-           for m = 1:len1
-               for n = 1:len2
-                   difference = abs(alpha(m)-beta(n));
-                   loop_count= loop_count+1;
-                   if(difference<=tweak_parameter)
-                       check(indB,1) = check(indB,1)+1;
-                        
-                        dataAP{indT}(2,find(alpha(m)==dataAP{i})) = length_of_blockers(indB,1);
-%                         x= dataAP{indT}(2,find(alpha(m)==dataAP{i}))
-                        dataAP{indT}(2,find(beta(n)==dataAP{j})) = length_of_blockers(indB,1);
-%                         y= dataAP{indT}(2,find(beta(n)==dataAP{j}))
-                   end 
-               end 
-           end 
-        end 
-        if(len2>len1)
-           for n = 1:len2
-               for m = 1:len1
-                   difference = abs(alpha(m)-beta(n));
-                   loop_count= loop_count+1;
-                   if(difference<=tweak_parameter)
-                       check(indB,1) = check(indB,1)+1;
-                       dataAP{indT}(2,find(alpha(m)==dataAP{i})) = length_of_blockers(indB,1);
-%                         x= dataAP{indT}(2,find(alpha(m)==dataAP{i}))
-                        dataAP{indT}(2,find(beta(n)==dataAP{j})) = length_of_blockers(indB,1);
-%                         y= dataAP{indT}(2,find(beta(n)==dataAP{j}))
-                   end 
-               end 
-           end 
-        end  
-    end
-end
-end 
-alpha=0;
-for i = 1:nB
-    alpha= check(i,1)+alpha;
-end 
-loop_count
-alpha
+% loop_count=0;
+% for indT = 1:nT
+%     len =length(dataAP{indT})
+%     r = 0 + (2*pi).*rand(1,len);
+%     dataAP{indT}(2,:) =  0.5*(abs(sec(r)));
+% %     dataAP{indT}(2,:) =  0.5 ;
+% end
+% for indB= 1:nB
+% for i = 1:nT
+%     if(i==nT)
+%         loop_count= loop_count+1;
+%         break 
+%     end 
+%     for j= i+1:nT
+%         alpha = time_of_blockers{indB,i};
+%         beta = time_of_blockers{indB,j};
+%         loop_count= loop_count+1; 
+%         if(alpha==0) 
+%             break 
+%         end 
+%         if(beta==0)
+%             break 
+%         end 
+%         tweak_parameter= 5;
+%         len1= length(alpha);
+%         len2 = length(beta);
+%         if(len1>=len2)
+%            for m = 1:len1
+%                for n = 1:len2
+%                    difference = abs(alpha(m)-beta(n));
+%                    loop_count= loop_count+1;
+%                    if(difference<=tweak_parameter)
+%                        check(indB,1) = check(indB,1)+1;
+%                         
+%                         dataAP{indT}(2,find(alpha(m)==dataAP{i})) = length_of_blockers(indB,1);
+% %                         x= dataAP{indT}(2,find(alpha(m)==dataAP{i}))
+%                         dataAP{indT}(2,find(beta(n)==dataAP{j})) = length_of_blockers(indB,1);
+% %                         y= dataAP{indT}(2,find(beta(n)==dataAP{j}))
+%                    end 
+%                end 
+%            end 
+%         end 
+%         if(len2>len1)
+%            for n = 1:len2
+%                for m = 1:len1
+%                    difference = abs(alpha(m)-beta(n));
+%                    loop_count= loop_count+1;
+%                    if(difference<=tweak_parameter)
+%                        check(indB,1) = check(indB,1)+1;
+%                        dataAP{indT}(2,find(alpha(m)==dataAP{i})) = length_of_blockers(indB,1);
+% %                         x= dataAP{indT}(2,find(alpha(m)==dataAP{i}))
+%                         dataAP{indT}(2,find(beta(n)==dataAP{j})) = length_of_blockers(indB,1);
+% %                         y= dataAP{indT}(2,find(beta(n)==dataAP{j}))
+%                    end 
+%                end 
+%            end 
+%         end  
+%     end
+% end
+% end 
+% alpha=0;
+% for i = 1:nB
+%     alpha= check(i,1)+alpha;
+% end 
+% loop_count;
+% alpha;
 totaltime = (simTime)/tstep;
 binary_seq = zeros(nT,totaltime);% to store whether the particular base station is blocked or not 
 losses_seq = zeros(nT,totaltime); % to store the value of all the losses in a given time sequence
@@ -214,10 +239,13 @@ for indT = 1:nT
     disp('Running for AP:')
     disp(indT)
     %     blDur  = exprnd(1/mu);
-    for timestamp = 1:size(dataAP{indT},2)
-        blDur  = ceil(dataAP{indT}(2,timestamp)/tstep);
-        blTime = ceil(dataAP{indT}(1,timestamp)/tstep);
-        if(blTime+blDur<=simTime/tstep)%avoid excess duration
+  
+        blDur_array  = dataAP{indT,2};
+        blTime_array = dataAP{indT,1};
+        for timeseq = 1:length(dataAP{indT,1})
+            blDur = ceil(blDur_array(1,timeseq)/tstep);
+            blTime = ceil(blTime_array(1,timeseq)/tstep);
+        if(blTime+blDur<=simTime/tstep&&blDur~=0)%avoid excess duration
             binary_seq(indT, blTime+1:1:(blTime+blDur))=binary_seq(indT, blTime+1:1:(blTime+blDur))+1;
         end
         % MADE CHANGES HERE 
@@ -230,8 +258,8 @@ for indT = 1:nT
                 loss = channelModel3(xT,yT,0);
             end
             losses_seq(indT,particular_inst) = loss;
-            power_received_byvirtueofanyparticular_basestation(indT,particular_inst) = 35-losses_seq(indT,particular_inst); 
-        end
+            power_received_byvirtueofanyparticular_basestation(indT,particular_inst) = 84-losses_seq(indT,particular_inst);
+%     x= power_received_byvirtueofanyparticular_basestation(indT,particular_inst)
         % MADE CHANGES HERE 
     % call the function that tells you about the path loss and shadow
     % fading for a given base station, and now based on the association
@@ -258,23 +286,27 @@ for indT = 1:nT
 %         set(gca,'ytick',[])
 %         set(gca,'yticklabel',[])
 %     end
+        end 
     end
 end
 % to plot the sequences of losses observed for any of the base station 
+% figure 
+% hold on 
+% plot(1:nB,check)
+% figure;
+% hold on
+%  title('Power Received by virtue of any of the Base Station')
 figure 
-hold on 
-plot(1:nB,check)
-figure;
-hold on
 for i = 1:nT
      subplot(nT,1,i)
      plot(tstep:tstep:simTime,power_received_byvirtueofanyparticular_basestation(i,:))
 %      plot(tstep:tstep:simTime,power_received_byvirtueofanyparticular_basestation(I(i),:))
-end   
-% for i= 1:nT
-%     subplot(nT,1,i)
-%     plot(tstep:tstep:simTime,binary_seq(i,:))
-% end 
+end 
+figure 
+for i= 1:nT
+    subplot(nT,1,i)
+    plot(tstep:tstep:simTime,binary_seq(i,:))
+end 
 % losses_seq(i,:)
 % power_received_byvirtueofanyparticular_basestation(indT,particular_inst)
 final_power_received = zeros(totaltime,1);
@@ -300,32 +332,35 @@ last_power =0;
 handover=0;
 loop=0;
 base_station = zeros(totaltime,1);
+last_power_base_station = 1;
+a_max_power_base_station = 1;
 for indTime = 1:totaltime
  for indT = 1:nT
      
      if(power_received_byvirtueofanyparticular_basestation(indT,indTime)>=max_power)
           max_power = power_received_byvirtueofanyparticular_basestation(indT,indTime);
-          base_station(indTime,1)= indT;
+          
+          a_max_power_base_station = indT;
      end
      
      loop= loop+1;
  end
  final_power_received(indTime) =max_power;
- 
- if(last_power~=max_power)
-         handover= handover+1;
-         final_power_received(indTime)= 80;
- end 
-lower_bound = max_power-5;
-upper_bound = max_power+5;
-% if (lower_bound>last_power) && (last_power>upper_bound)
+%  if(last_power~=max_power)
+%          handover= handover+1;
+%          final_power_received(indTime)= -80;
+%  end 
+lower_bound = last_power-5;
+upper_bound = last_power+5;
+if ((max_power>last_power+2) && (last_power<-15))
+    handover= handover+1;
+     final_power_received(indTime)= - 100;
+      base_station(indTime,1)=  a_max_power_base_station;
+end 
+% if (last_power~=max_power)
 %     handover= handover+1;
 %      final_power_received(indTime)= - 80;
-% end 
-if (last_power~=max_power)
-    handover= handover+1;
-     final_power_received(indTime)= - 80;
-end  
+% end  
      last_power=max_power;
      max_power= -120;
 end
@@ -336,10 +371,17 @@ for i = 1:indTime
     aggregate = final_power_received(i,1)+aggregate;
 end
 aggregate = aggregate/totaltime
-figure  
+capacity = 400*log(1+aggregate/7)
+figure 
 plot(tstep:tstep:simTime,final_power_received)
+title(' Final Power Being Received at the UE Terminal ')
+xlabel('Time(sec)')
+ylabel('Power(dBm)')
 figure 
 plot(tstep:tstep:simTime,base_station)
+title('Handovers Between the Different Base Stations as time proceeds')
+xlabel('Time(sec)')
+ylabel('Base Station Number')
 %CHANGES MADE HERE
 
 % if(wannaplot)
@@ -358,11 +400,11 @@ plot(tstep:tstep:simTime,base_station)
 % ? HOW TO STORE AN ARRAY or pass it to the main code so that it can be
 % stored in a csv file 
 % output=[avgFreq,avgDur,probAllBl,nTorig,nT];
-nTorig
-durations = [];
-for i=1:length(dataAP)
-    durations = [durations, dataAP{i}(2,:)];
-end
+% nTorig;
+% durations = [];
+% for i=1:length(dataAP)
+%     durations = [durations, dataAP{i}(2,:)];
+% end
 % to plot ECDF of durations, uncomment next line
 % figure; ecdf(durations);
 end

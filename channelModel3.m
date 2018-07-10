@@ -49,7 +49,7 @@ end
 % SF_LOS  =  sigma_LOS*randn(1,1);
 % SF_NLOS  = sigma_NLOS*randn(1,1);
  SF_LOS = normrnd(0,sigma_LOS,1,1);
-% SF_NLOS  =normrnd(0,sigma_NLOS,1,1); 
+ SF_NLOS  =normrnd(0,sigma_NLOS,1,1); 
 %%Calculate probability of LOS channel
 %  if(d2D<=18), pLOS  = 1;
 %  else, pLOS  = 18/d2D + exp(-d2D/36)*(1-18/d2D);
@@ -69,11 +69,12 @@ end
 if(considerNLOS~=0)
     PL  = PL_NLOS ;
     SF  = 35*((rand(1,1))*(considerNLOS));
+%     SF = SF_NLOS;
 else
     PL = PL_LOS;
     SF = SF_LOS;
 end
-loss= PL;
+loss= PL+SF;
 
 % CHANGES MADE HERE 
 % % % % These plots does make sense in channelModel.m ;)
