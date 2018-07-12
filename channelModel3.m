@@ -20,7 +20,7 @@ function loss = channelModel3(xT,yT,considerNLOS)
 xBS = xT; yBS = yT;
 xUE = 0; yUE = 0; 
 hBS = 5; hUE = 1.4;
-fc = 28; % frequency of operation, we assume no doppler effect  
+fc = 73; % frequency of operation, we assume no doppler effect  
 sigma_LOS = 4;
 sigma_NLOS = 7.82;
 
@@ -68,7 +68,7 @@ end
  
 if(considerNLOS~=0)
     PL  = PL_NLOS ;
-    SF  = 35*((rand(1,1))*(considerNLOS));
+    SF  = 30*((rand(1,1))*(considerNLOS));
 %     SF = SF_NLOS;
 else
     PL = PL_LOS;

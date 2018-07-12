@@ -30,7 +30,7 @@ R = 100; %m Radius
 densityBL = 0.005; %(in bl/m^2)
 densityAP = 200*10^(-6);% what is the unit of this base station density that is being specified here 
 %unit is number_of_BS/m^2
-omegaVal = pi/3;
+omegaVal = 0;
 % densityBL = [0.005,0.01];
 % densityAP = [50,100,200,300,400,500]*10^(-6);%(1:1:10)/10^4;
 % omegaVal = [0, pi/3];
@@ -62,6 +62,7 @@ end
 for indT = 1:length(densityAP) % so as to run it for various values of density of AP and density of BL 
         rhoT = densityAP(indT);% as per the notation of the paper this is lambda_t
         nTorig = poissrnd(rhoT*pi*R^2); %original AP number (without self-block)
+        nTorig = 9;
         rT = R*sqrt(rand(nTorig,1)); %location of APs, an array of size nTorig*1 is returned 
         alphaT = 2*pi*rand(nTorig,1);%location of APs, an array of size nTorig*1 is returned 
         alphai=(2/pi)*(0.1)*frac*rT;

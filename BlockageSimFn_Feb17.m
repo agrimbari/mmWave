@@ -293,19 +293,28 @@ end
 % figure 
 % hold on 
 % plot(1:nB,check)
-% figure;
-% hold on
-%  title('Power Received by virtue of any of the Base Station')
-figure 
-for i = 1:nT
-     subplot(nT,1,i)
-     plot(tstep:tstep:simTime,power_received_byvirtueofanyparticular_basestation(i,:))
-%      plot(tstep:tstep:simTime,power_received_byvirtueofanyparticular_basestation(I(i),:))
-end 
+
+% figure 
+% for i = 1:nT
+%     
+%      subplot(nT,1,i)
+%      plot(tstep:tstep:simTime,power_received_byvirtueofanyparticular_basestation(i,:))
+%     ylabel(['BS: ' num2str(i) ''])
+%      suptitle('Power Received by virtue of any of the Base Station')
+%      if (i==nT)
+%        xlabel('Time(sec)')  
+%      end 
+% %      plot(tstep:tstep:simTime,power_received_byvirtueofanyparticular_basestation(I(i),:))
+% end 
 figure 
 for i= 1:nT
     subplot(nT,1,i)
     plot(tstep:tstep:simTime,binary_seq(i,:))
+     ylabel(['BS: ' num2str(i) ''])
+     if (i==nT)
+       xlabel('Time(sec)')  
+     end 
+    suptitle('Plot of Number of Blockers blocking a LoS link vs time for different Base Stations')
 end 
 % losses_seq(i,:)
 % power_received_byvirtueofanyparticular_basestation(indT,particular_inst)
@@ -339,24 +348,35 @@ for indTime = 1:totaltime
      
      if(power_received_byvirtueofanyparticular_basestation(indT,indTime)>=max_power)
           max_power = power_received_byvirtueofanyparticular_basestation(indT,indTime);
-          
           a_max_power_base_station = indT;
      end
      
      loop= loop+1;
  end
- final_power_received(indTime) =max_power;
+ final_power_received(indTime)=max_power;
 %  if(last_power~=max_power)
 %          handover= handover+1;
 %          final_power_received(indTime)= -80;
 %  end 
+
 lower_bound = last_power-5;
 upper_bound = last_power+5;
-if ((max_power>last_power+2) && (last_power<-15))
+if ((power_received_byvirtueofanyparticular_basestation(a_max_power_base_station,indTime)>power_received_byvirtueofanyparticular_basestation(last_power_base_station,indTime)+2) && (power_received_byvirtueofanyparticular_basestation(last_power_base_station,indTime)<-30))
     handover= handover+1;
      final_power_received(indTime)= - 100;
       base_station(indTime,1)=  a_max_power_base_station;
+else
+    if(indTime~=1)
+    base_station(indTime,1)=base_station(indTime-1,1);
+    end 
 end 
+
+% if ((power_received_byvirtueofanyparticular_basestation(a_max_power_base_station,indTime)>power_received_byvirtueofanyparticular_basestation(last_power_base_station,indTime)))
+%     handover= handover+1;
+%      final_power_received(indTime)= - 100;
+%       base_station(indTime,1)=  a_max_power_base_station;
+% end 
+last_power_base_station =a_max_power_base_station; 
 % if (last_power~=max_power)
 %     handover= handover+1;
 %      final_power_received(indTime)= - 80;
@@ -377,11 +397,11 @@ plot(tstep:tstep:simTime,final_power_received)
 title(' Final Power Being Received at the UE Terminal ')
 xlabel('Time(sec)')
 ylabel('Power(dBm)')
-figure 
-plot(tstep:tstep:simTime,base_station)
-title('Handovers Between the Different Base Stations as time proceeds')
-xlabel('Time(sec)')
-ylabel('Base Station Number')
+% figure 
+% plot(tstep:tstep:simTime,base_station)
+% title('Handovers Between the Different Base Stations as time proceeds')
+% xlabel('Time(sec)')
+% ylabel('Base Station Number')
 %CHANGES MADE HERE
 
 % if(wannaplot)
